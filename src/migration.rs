@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use thiserror::Error;
 
-use crate::domain::version::Version;
+use crate::version::Version;
 
 pub struct Migrator<'a> {
   module_name: String,

@@ -13,7 +13,7 @@ use tokio_postgres::row::RowIndex;
 use tokio_postgres::types::FromSql;
 use tokio_postgres::Row;
 
-use crate::domain::error::UnitError;
+use crate::error::UnitError;
 
 pub type PgPool = deadpool_postgres::Pool;
 
