@@ -1,5 +1,6 @@
 use actix_web::http::Uri;
 use deadpool_postgres::{Manager, ManagerConfig, Pool as Deadpool, RecyclingMethod};
+use smart_default::SmartDefault;
 
 use crate::db::PgPool;
 use crate::serde::{default_true, deserialize_log_level};
@@ -16,44 +17,29 @@ pub fn clap_arg_to_log_level(level: &str) -> Result<slog::Level, String> {
   }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SmartDefault)]
 pub struct LoggingConfig {
+  #[default = true]
   #[serde(default = "default_true")]
   pub log_to_stdout: bool,
   pub log_file: Option<String>,
+  #[default(_code = "slog::Level::Info")]
   #[serde(deserialize_with = "deserialize_log_level")]
   pub log_level: slog::Level,
 }
 
-impl Default for LoggingConfig {
-  fn default() -> Self {
-    Self {
-      log_to_stdout: true,
-      log_level: slog::Level::Debug,
-      log_file: None,
-    }
-  }
-}
-
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SmartDefault)]
 pub struct DatabaseConfig {
+  #[default = "localhost"]
   pub host: String,
+  #[default = 5432]
   pub port: u16,
+  #[default = ""]
   pub user: String,
+  #[default = ""]
   pub password: String,
+  #[default = "fuzion-veritas"]
   pub name: String,
-}
-
-impl Default for DatabaseConfig {
-  fn default() -> Self {
-    Self {
-      host: "".to_owned(),
-      port: 5678u16,
-      name: "".to_owned(),
-      user: "".to_owned(),
-      password: "".to_owned(),
-    }
-  }
 }
 
 impl DatabaseConfig {
@@ -77,38 +63,39 @@ impl DatabaseConfig {
   }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SmartDefault)]
 pub struct HttpConfigWithPublic {
+  #[default = "localhost"]
   pub host: String,
+  #[default = 5432]
   pub port: u16,
+  #[default = false]
+  #[serde(default)]
   pub secure: bool,
   pub public: HttpConfig,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SmartDefault)]
 pub struct HttpConfigWithPublicPrivate {
+  #[default = ""]
   pub host: String,
   pub port: u16,
+  #[default = false]
+  #[serde(default)]
   pub secure: bool,
   pub private: HttpConfig,
   pub public: HttpConfig,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, SmartDefault)]
 pub struct HttpConfig {
+  #[default = ""]
   pub host: String,
+  #[default = 80]
   pub port: u16,
+  #[default = false]
+  #[serde(default)]
   pub secure: bool,
-}
-
-impl Default for HttpConfig {
-  fn default() -> Self {
-    Self {
-      host: "".to_owned(),
-      port: 80u16,
-      secure: false,
-    }
-  }
 }
 
 impl HttpConfig {
@@ -189,29 +176,6 @@ impl HttpConfigWithPublicPrivate {
 
   pub fn get_socket_addr(&self) -> (String, u16) {
     (self.host.to_owned(), self.port)
-  }
-}
-
-impl Default for HttpConfigWithPublic {
-  fn default() -> Self {
-    Self {
-      host: "".to_owned(),
-      port: 80u16,
-      secure: false,
-      public: Default::default(),
-    }
-  }
-}
-
-impl Default for HttpConfigWithPublicPrivate {
-  fn default() -> Self {
-    Self {
-      host: "".to_owned(),
-      port: 80u16,
-      secure: false,
-      public: Default::default(),
-      private: Default::default(),
-    }
   }
 }
 
