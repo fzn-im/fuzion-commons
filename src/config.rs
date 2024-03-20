@@ -1,7 +1,20 @@
+use actix_web::http::Uri;
 use deadpool_postgres::{Manager, ManagerConfig, Pool as Deadpool, RecyclingMethod};
 
 use crate::db::PgPool;
 use crate::serde::{default_true, deserialize_log_level};
+
+pub fn clap_arg_to_log_level(level: &str) -> Result<slog::Level, String> {
+  match level {
+    "critical" => Ok(slog::Level::Critical),
+    "debug" => Ok(slog::Level::Debug),
+    "error" => Ok(slog::Level::Error),
+    "trace" => Ok(slog::Level::Trace),
+    "warning" => Ok(slog::Level::Warning),
+    "info" => Ok(slog::Level::Info),
+    _ => Err(String::from("Failed to parse log level.")),
+  }
+}
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct LoggingConfig {
@@ -62,4 +75,147 @@ impl DatabaseConfig {
 
     Deadpool::builder(manager).build().map_err(|_| ())
   }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct HttpConfigWithPublic {
+  pub host: String,
+  pub port: u16,
+  pub secure: bool,
+  pub public: HttpConfig,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct HttpConfigWithPublicPrivate {
+  pub host: String,
+  pub port: u16,
+  pub secure: bool,
+  pub private: HttpConfig,
+  pub public: HttpConfig,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct HttpConfig {
+  pub host: String,
+  pub port: u16,
+  pub secure: bool,
+}
+
+impl Default for HttpConfig {
+  fn default() -> Self {
+    Self {
+      host: "".to_owned(),
+      port: 80u16,
+      secure: false,
+    }
+  }
+}
+
+impl HttpConfig {
+  pub fn get_uri(&self) -> Uri {
+    let mut public_path = String::new();
+
+    public_path += match self.secure {
+      true => "https",
+      _ => "http",
+    };
+
+    public_path += &format!("://{}", &self.host);
+
+    if !(!self.secure && self.port == 80) && !(self.secure && self.port == 443) {
+      public_path += &format!(":{}", &self.port);
+    }
+
+    public_path.parse().expect("Invalid URI provided")
+  }
+
+  pub fn get_socket_addr(&self) -> (String, u16) {
+    (self.host.to_owned(), self.port)
+  }
+}
+
+impl HttpConfigWithPublic {
+  pub fn get_uri(&self) -> Uri {
+    let mut public_path = String::new();
+
+    public_path += match self.secure {
+      true => "https",
+      _ => "http",
+    };
+
+    public_path += &format!("://{}", &self.host);
+
+    if !(!self.secure && self.port == 80) && !(self.secure && self.port == 443) {
+      public_path += &format!(":{}", &self.port);
+    }
+
+    public_path.parse().expect("Invalid URI provided")
+  }
+
+  pub fn get_public_uri(&self) -> Uri {
+    self.public.get_uri()
+  }
+
+  pub fn get_socket_addr(&self) -> (String, u16) {
+    (self.host.to_owned(), self.port)
+  }
+}
+
+impl HttpConfigWithPublicPrivate {
+  pub fn get_uri(&self) -> Uri {
+    let mut public_path = String::new();
+
+    public_path += match self.secure {
+      true => "https",
+      _ => "http",
+    };
+
+    public_path += &format!("://{}", &self.host);
+
+    if !(!self.secure && self.port == 80) && !(self.secure && self.port == 443) {
+      public_path += &format!(":{}", &self.port);
+    }
+
+    public_path.parse().expect("Invalid URI provided")
+  }
+
+  pub fn get_public_uri(&self) -> Uri {
+    self.public.get_uri()
+  }
+
+  pub fn get_private_uri(&self) -> Uri {
+    self.private.get_uri()
+  }
+
+  pub fn get_socket_addr(&self) -> (String, u16) {
+    (self.host.to_owned(), self.port)
+  }
+}
+
+impl Default for HttpConfigWithPublic {
+  fn default() -> Self {
+    Self {
+      host: "".to_owned(),
+      port: 80u16,
+      secure: false,
+      public: Default::default(),
+    }
+  }
+}
+
+impl Default for HttpConfigWithPublicPrivate {
+  fn default() -> Self {
+    Self {
+      host: "".to_owned(),
+      port: 80u16,
+      secure: false,
+      public: Default::default(),
+      private: Default::default(),
+    }
+  }
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct HttpEndpointConfig {
+  pub endpoint: String,
 }
