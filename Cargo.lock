@@ -182,6 +182,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-web-thiserror"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "197b4f0e5baecbf900e2f416d70ec917df33b1cdf910db35e193392ef6997c71"
+dependencies = [
+ "actix-web",
+ "actix-web-thiserror-derive",
+ "arc-swap",
+ "lazy_static",
+ "serde_json",
+]
+
+[[package]]
+name = "actix-web-thiserror-derive"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87f02b777327eb6bde79c90e27cd008b2181f683ffa0acb35433e59f43eb071c"
+dependencies = [
+ "actix-web",
+ "arc-swap",
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -698,6 +725,7 @@ name = "fuzion-commons"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "actix-web-thiserror",
  "async-trait",
  "deadpool",
  "deadpool-postgres",
