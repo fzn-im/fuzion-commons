@@ -176,11 +176,11 @@ impl<'a> FromRequest for PgClient<'a> {
 
 #[derive(Debug, Error, ResponseError)]
 pub enum PgClientError {
-  #[error("internal_error")]
+  #[error("internal error")]
   InternalError,
-  #[error("tokio_postgres error: {0}")]
+  #[error(transparent)]
   PostgresError(#[from] tokio_postgres::Error),
-  #[error("deadpool_pool error: {0}")]
+  #[error(transparent)]
   DeadpoolPoolError(#[from] DeadpoolPoolError),
 }
 
