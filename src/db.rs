@@ -16,11 +16,15 @@ pub struct PgClient<'a> {
 
 impl<'a> PgClient<'a> {
   pub fn from_client(client: deadpool_postgres::Client) -> PgClient<'a> {
-    client.into()
+    PgClient {
+      inner: PgClientInner::Client(client),
+    }
   }
 
   fn from_transaction(transaction: deadpool_postgres::Transaction<'a>) -> PgClient<'a> {
-    transaction.into()
+    PgClient {
+      inner: PgClientInner::Transaction(transaction),
+    }
   }
 
   pub async fn from_pool(pool: &PgPool) -> Result<PgClient<'a>, PgClientError> {
