@@ -1,6 +1,8 @@
 use actix_web::http::Uri;
+use deadpool::managed::BuildError;
 use deadpool_postgres::{Manager, ManagerConfig, Pool as Deadpool, RecyclingMethod};
 use smart_default::SmartDefault;
+use thiserror::Error;
 
 use crate::db::PgPool;
 use crate::serde::{default_true, deserialize_log_level};
@@ -43,7 +45,7 @@ pub struct DatabaseConfig {
 }
 
 impl DatabaseConfig {
-  pub async fn get_db_pool(&self) -> Result<PgPool, ()> {
+  pub async fn get_db_pool(&self) -> Result<PgPool, DatabaseConfigError> {
     let mut pg_config = tokio_postgres::Config::new();
     pg_config.user(&self.user);
     pg_config.password(&self.password);
@@ -59,8 +61,14 @@ impl DatabaseConfig {
       },
     );
 
-    Deadpool::builder(manager).build().map_err(|_| ())
+    Ok(Deadpool::builder(manager).build()?)
   }
+}
+
+#[derive(Clone, Debug, Error)]
+pub enum DatabaseConfigError {
+  #[error(transparent)]
+  DeadpoolBuildError(#[from] BuildError),
 }
 
 #[derive(Clone, Debug, Deserialize, SmartDefault)]
