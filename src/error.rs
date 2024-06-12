@@ -27,6 +27,7 @@ impl ResponseError for UnitError {
 pub struct ErrorMap {
   error: String,
   errors: HashMap<String, serde_json::Value>,
+  #[serde(rename = "type")]
   _type: String,
 }
 
