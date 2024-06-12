@@ -39,10 +39,14 @@ impl ErrorMap {
     }
   }
 
-  pub fn add_error<S: Serialize>(&mut self, field: &str, value: S) {
+  pub fn add_error<S, T>(&mut self, field: S, value: T)
+  where
+    S: Into<String>,
+    T: Serialize,
+  {
     self
       .errors
-      .insert(field.to_owned(), serde_json::to_value(&value).unwrap());
+      .insert(field.into(), serde_json::to_value(&value).unwrap());
   }
 
   pub fn len(&self) -> usize {
