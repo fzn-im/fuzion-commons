@@ -24,15 +24,11 @@ impl ResponseError for UnitError {
 }
 
 #[derive(Debug, Serialize)]
-pub struct ErrorMap {
-  errors: HashMap<String, serde_json::Value>,
-}
+pub struct ErrorMap(HashMap<String, serde_json::Value>);
 
 impl ErrorMap {
   pub fn new() -> Self {
-    Self {
-      errors: Default::default(),
-    }
+    Self(Default::default())
   }
 
   pub fn add_error<S, T>(&mut self, field: S, value: T)
@@ -41,15 +37,15 @@ impl ErrorMap {
     T: Serialize,
   {
     self
-      .errors
+      .0
       .insert(field.into(), serde_json::to_value(&value).unwrap());
   }
 
   pub fn to_map(self) -> HashMap<String, serde_json::Value> {
-    self.errors
+    self.0
   }
 
   pub fn len(&self) -> usize {
-    self.errors.len()
+    self.0.len()
   }
 }
