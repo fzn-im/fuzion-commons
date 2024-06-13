@@ -29,7 +29,7 @@ pub struct ErrorMap {
 }
 
 impl ErrorMap {
-  pub fn new<T: Into<String>>() -> Self {
+  pub fn new() -> Self {
     Self {
       errors: Default::default(),
     }
