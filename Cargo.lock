@@ -183,9 +183,9 @@ dependencies = [
 
 [[package]]
 name = "actix-web-thiserror"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9731186c92de2e44d12410973c73895cc48f6a62b40e9168a99faad47a0debbd"
+checksum = "215c27c4b1009ac45e8b81767928495218ec82cae8e068e8710d63e86831167b"
 dependencies = [
  "actix-web",
  "actix-web-thiserror-derive",
@@ -196,9 +196,9 @@ dependencies = [
 
 [[package]]
 name = "actix-web-thiserror-derive"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2c29febadb98ca9b21ba28529f6365b6a9a5a7470530a17c27effa5c8c7d2ec"
+checksum = "b3fe8987bd9121bfdbacb061e281028bc19f582eb7b99f7f20ee3a5c11f87fd4"
 dependencies = [
  "actix-web",
  "arc-swap",
