@@ -158,7 +158,37 @@ pub enum MigrationError {
 #[async_trait]
 pub trait Migration {
   fn version(&self) -> Version;
-  async fn do_migration(&self, conn: &mut tokio_postgres::Transaction<'_>) -> Result<(), ()>;
+  async fn do_migration(
+    &self,
+    conn: &mut tokio_postgres::Transaction<'_>,
+  ) -> Result<(), MigrationError>;
+}
+
+pub struct PlainMigration {
+  version: Version,
+  query: &'static str,
+}
+
+impl PlainMigration {
+  pub fn new(version: Version, query: &'static str) -> Self {
+    Self { version, query }
+  }
+}
+
+#[async_trait]
+impl Migration for PlainMigration {
+  fn version(&self) -> Version {
+    self.version
+  }
+
+  async fn do_migration(
+    &self,
+    conn: &mut tokio_postgres::Transaction<'_>,
+  ) -> Result<(), MigrationError> {
+    conn.batch_execute(self.query).await?;
+
+    Ok(())
+  }
 }
 
 const CHECK_VERSION_EXISTS: &'static str = r#"

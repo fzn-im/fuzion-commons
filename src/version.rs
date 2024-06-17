@@ -13,7 +13,7 @@ impl ModuleVersion {
   }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Version(pub i16, pub i16, pub i16);
 
 impl std::cmp::PartialEq for Version {
