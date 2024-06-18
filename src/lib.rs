@@ -9,7 +9,6 @@ pub mod config;
 pub mod db;
 pub mod error;
 pub mod logging;
-#[macro_use]
 pub mod migration;
 pub mod serde;
 pub mod version;
