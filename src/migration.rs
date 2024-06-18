@@ -264,7 +264,7 @@ ALTER TABLE public.version
   ADD COLUMN module VARCHAR(128);
 
 UPDATE public.version
-SET module = 'base';
+SET module = 'fuzion';
 
 ALTER TABLE public.version
   ALTER COLUMN module SET NOT NULL;
