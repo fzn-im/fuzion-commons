@@ -210,7 +210,7 @@ pub trait Migration {
 }
 
 #[macro_export]
-macro_rules! plain_migratin {
+macro_rules! plain_migration {
   ($arg:tt) => {
     Box::new(PlainMigration::new(
       Version::from_filename($(tt)?).unwrap(),
