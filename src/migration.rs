@@ -64,44 +64,24 @@ impl<'a> Migrator<'a> {
       .collect();
 
     // Perform each one.
-    let mut iter = migrations.iter();
-    let mut next = iter.next();
-    let mut had_error = false;
-
-    while next.is_some() && !had_error {
-      let migration = next.unwrap();
+    for migration in &migrations {
       info!("Migrating to {:?} ...", &migration.version());
 
-      let mut txn = self.db_client.transaction().await.unwrap();
+      let mut txn = self.db_client.transaction().await?;
 
       // If we fail, set a flag
-      match migration.do_migration(&mut txn).await {
-        Ok(_) => {
-          if Self::update_version(&txn, &self.module_name, &***migration)
-            .await
-            .is_err()
-          {
-            had_error = true;
-          }
-        }
-        Err(_) => {
-          had_error = true;
-        }
-      }
+      let result = match migration.do_migration(&mut txn).await {
+        Ok(_) => Self::update_version(&txn, &self.module_name, &***migration).await,
+        Err(err) => Err(err),
+      };
 
-      if had_error {
+      if result.is_err() {
         error!("Failed migration on version: {:?}", &migration.version());
-      } else if txn.commit().await.is_err() {
-        error!("Failed to commit migration");
 
-        had_error = true
+        return result;
       }
 
-      next = iter.next();
-    }
-
-    if had_error {
-      panic!("Could not perform migrations.");
+      txn.commit().await?;
     }
 
     Ok(())
@@ -211,11 +191,11 @@ pub trait Migration {
 
 #[macro_export]
 macro_rules! plain_migration {
-  ($arg:tt) => {
-    Box::new(PlainMigration::new(
-      Version::from_filename($(tt)?).unwrap(),
-      include_str!(concat!($(tt)?)),
-    )),
+  ($arg:literal) => {
+    Box::new(fuzion_commons::migration::PlainMigration::new(
+      fuzion_commons::version::Version::from_filename($arg).unwrap(),
+      include_str!(concat!($arg)),
+    ));
   };
 }
 
