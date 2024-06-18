@@ -9,6 +9,7 @@ pub mod config;
 pub mod db;
 pub mod error;
 pub mod logging;
+#[macro_export]
 pub mod migration;
 pub mod serde;
 pub mod version;
