@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use thiserror::Error;
 
+use crate::config::DatabaseConfigError;
+use crate::db::DeadpoolPoolError;
 use crate::version::Version;
 
 pub struct Migrator<'a> {
@@ -143,6 +145,16 @@ impl<'a> Migrator<'a> {
 
     Ok(())
   }
+}
+
+#[derive(Debug, Error)]
+pub enum MigrationInitError {
+  #[error(transparent)]
+  DatabaseConfigError(#[from] DatabaseConfigError),
+  #[error(transparent)]
+  DeadpoolPoolError(#[from] DeadpoolPoolError),
+  #[error(transparent)]
+  MigrationError(#[from] MigrationError),
 }
 
 #[derive(Debug, Error)]
