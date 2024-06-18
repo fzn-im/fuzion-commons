@@ -1,4 +1,6 @@
 use async_trait::async_trait;
+use lazy_static::lazy_static;
+use regex::Regex;
 use thiserror::Error;
 
 use crate::config::DatabaseConfigError;
@@ -11,7 +13,32 @@ pub struct Migrator<'a> {
   db_client: deadpool_postgres::Client,
 }
 
-pub const BASE_MODULE_NAME: &'static str = "base";
+lazy_static! {
+  static ref MIGRATION_FILE_VERSION: Regex = Regex::new("/v(\\d+)_(\\d+)_(\\d+)+.sql$").unwrap();
+}
+
+impl Version {
+  pub fn from_filename(filename: &str) -> Result<Self, ()> {
+    let captures = MIGRATION_FILE_VERSION.captures(filename).unwrap();
+
+    Ok(Version(
+      captures
+        .get(1)
+        .and_then(|v| v.as_str().parse().ok())
+        .ok_or(())?,
+      captures
+        .get(2)
+        .and_then(|v| v.as_str().parse().ok())
+        .ok_or(())?,
+      captures
+        .get(3)
+        .and_then(|v| v.as_str().parse().ok())
+        .ok_or(())?,
+    ))
+  }
+}
+
+pub const BASE_MODULE_NAME: &'static str = "fuzion";
 
 impl<'a> Migrator<'a> {
   pub fn new(
@@ -180,6 +207,16 @@ pub trait Migration {
     &self,
     conn: &mut tokio_postgres::Transaction<'_>,
   ) -> Result<(), MigrationError>;
+}
+
+#[macro_export]
+macro_rules! plain_migratin {
+  ($arg:tt) => {
+    Box::new(PlainMigration::new(
+      Version::from_filename($(tt)?).unwrap(),
+      include_str!(concat!($(tt)?)),
+    )),
+  };
 }
 
 pub struct PlainMigration {
