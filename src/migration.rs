@@ -159,10 +159,16 @@ pub enum MigrationInitError {
 
 #[derive(Debug, Error)]
 pub enum MigrationError {
-  #[error("could not initialize version table")]
+  #[error("Could not initialize version table")]
   CouldNotInitializeVersionTable,
-  #[error("base version does not support modules, please upgrade")]
+  #[error("Base version does not support modules, please upgrade")]
   NoModules,
+  #[error("Interactive required.")]
+  InteractiveRequired,
+  #[error(transparent)]
+  IoError(#[from] std::io::Error),
+  #[error("Error: {0}")]
+  OtherError(String),
   #[error(transparent)]
   Postgres(#[from] tokio_postgres::Error),
 }
