@@ -19,15 +19,17 @@ pub fn clap_arg_to_log_level(level: &str) -> Result<slog::Level, String> {
   }
 }
 
-#[derive(Clone, Debug, Deserialize, SmartDefault)]
+#[derive(Clone, Debug, Deserialize, Serialize, SmartDefault)]
 pub struct LoggingConfig {
   #[default = true]
   #[serde(default = "default_true")]
   pub log_to_stdout: bool,
   pub log_file: Option<String>,
   #[default(_code = "slog::Level::Info")]
-  #[serde(deserialize_with = "deserialize_log_level")]
-  #[serde(serialize_with = "serialize_log_level")]
+  #[serde(
+    deserialize_with = "deserialize_log_level",
+    serialize_with = "serialize_log_level"
+  )]
   pub log_level: slog::Level,
 }
 

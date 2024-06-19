@@ -9,12 +9,12 @@ where
   str_to_log_level(Some(&level)).map_err(|_| de::Error::custom("Invalid loglevel"))
 }
 
-pub fn serialize_log_level<S>(level: Option<slog::Level>, s: S) -> Result<S::Ok, S::Error>
+pub fn serialize_log_level<S>(level: &slog::Level, s: S) -> Result<S::Ok, S::Error>
 where
   S: Serializer,
 {
   let value: String =
-    log_level_to_str(level).map_err(|_| ser::Error::custom("Invalid loglevel"))?;
+    log_level_to_str(Some(*level)).map_err(|_| ser::Error::custom("Invalid loglevel"))?;
   Ok(s.serialize_str(&value)?)
 }
 
