@@ -1,5 +1,5 @@
 use regex::Regex;
-use serde::{de, Deserializer};
+use serde::{de, Deserializer, Serializer};
 
 pub fn deserialize_log_level<'de, D>(de: D) -> Result<slog::Level, D::Error>
 where
@@ -19,6 +19,20 @@ pub fn str_to_log_level(level: Option<&str>) -> Result<slog::Level, ()> {
     Some("info") | None => Ok(slog::Level::Info),
     Some(_) => Err(()),
   }
+}
+
+pub fn log_level_to_str<S>(level: Option<slog::Level>, s: S) -> Result<S::Ok, S::Error>
+where
+  S: Serializer,
+{
+  s.serialize_str(match level {
+    Some(slog::Level::Critical) => "critical",
+    Some(slog::Level::Debug) => "debug",
+    Some(slog::Level::Error) => "error",
+    Some(slog::Level::Trace) => "trace",
+    Some(slog::Level::Warning) => "warning",
+    Some(_) | None => "info",
+  })
 }
 
 pub fn deserialize_regex<'de, D>(de: D) -> Result<Regex, D::Error>

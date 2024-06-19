@@ -27,6 +27,7 @@ pub struct LoggingConfig {
   pub log_file: Option<String>,
   #[default(_code = "slog::Level::Info")]
   #[serde(deserialize_with = "deserialize_log_level")]
+  #[serde(serialize_with = "serialize_log_level")]
   pub log_level: slog::Level,
 }
 
