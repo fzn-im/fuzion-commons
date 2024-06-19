@@ -49,6 +49,13 @@ where
   Regex::new(&regex).map_err(de::Error::custom)
 }
 
+pub fn seserialize_regex<S>(regex: Regex, s: S) -> Result<S::Ok, S::Error>
+where
+  S: Serializer,
+{
+  s.serialize_str(&regex.to_string())
+}
+
 pub fn default_true() -> bool {
   true
 }
