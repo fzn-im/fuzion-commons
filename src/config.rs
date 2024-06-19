@@ -33,7 +33,7 @@ pub struct LoggingConfig {
   pub log_level: slog::Level,
 }
 
-#[derive(Clone, Debug, Deserialize, SmartDefault)]
+#[derive(Clone, Debug, Deserialize, Serialize, SmartDefault)]
 pub struct DatabaseConfig {
   #[default = "localhost"]
   pub host: String,
@@ -74,7 +74,7 @@ pub enum DatabaseConfigError {
   DeadpoolBuildError(#[from] BuildError),
 }
 
-#[derive(Clone, Debug, Deserialize, SmartDefault)]
+#[derive(Clone, Debug, Deserialize, Serialize, SmartDefault)]
 pub struct HttpConfigWithPublic {
   #[default = "localhost"]
   pub host: String,
@@ -86,7 +86,7 @@ pub struct HttpConfigWithPublic {
   pub public: HttpConfig,
 }
 
-#[derive(Clone, Debug, Deserialize, SmartDefault)]
+#[derive(Clone, Debug, Deserialize, Serialize, SmartDefault)]
 pub struct HttpConfigWithPublicPrivate {
   #[default = ""]
   pub host: String,
@@ -98,7 +98,7 @@ pub struct HttpConfigWithPublicPrivate {
   pub public: HttpConfig,
 }
 
-#[derive(Clone, Debug, Deserialize, SmartDefault)]
+#[derive(Clone, Debug, Deserialize, Serialize, SmartDefault)]
 pub struct HttpConfig {
   #[default = ""]
   pub host: String,
@@ -190,7 +190,7 @@ impl HttpConfigWithPublicPrivate {
   }
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct HttpEndpointConfig {
   pub endpoint: String,
 }
