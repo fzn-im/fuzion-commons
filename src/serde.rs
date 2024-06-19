@@ -1,5 +1,5 @@
 use regex::Regex;
-use serde::{de, Deserializer, Serializer};
+use serde::{de, ser, Deserializer, Serializer};
 
 pub fn deserialize_log_level<'de, D>(de: D) -> Result<slog::Level, D::Error>
 where
@@ -7,6 +7,15 @@ where
 {
   let level: String = de::Deserialize::deserialize(de)?;
   str_to_log_level(Some(&level)).map_err(|_| de::Error::custom("Invalid loglevel"))
+}
+
+pub fn serialize_log_level<S>(level: Option<slog::Level>, s: S) -> Result<S::Ok, S::Error>
+where
+  S: Serializer,
+{
+  let value: String =
+    log_level_to_str(level).map_err(|_| ser::Error::custom("Invalid loglevel"))?;
+  Ok(s.serialize_str(&value)?)
 }
 
 pub fn str_to_log_level(level: Option<&str>) -> Result<slog::Level, ()> {
@@ -21,18 +30,15 @@ pub fn str_to_log_level(level: Option<&str>) -> Result<slog::Level, ()> {
   }
 }
 
-pub fn log_level_to_str<S>(level: Option<slog::Level>, s: S) -> Result<S::Ok, S::Error>
-where
-  S: Serializer,
-{
-  s.serialize_str(match level {
-    Some(slog::Level::Critical) => "critical",
-    Some(slog::Level::Debug) => "debug",
-    Some(slog::Level::Error) => "error",
-    Some(slog::Level::Trace) => "trace",
-    Some(slog::Level::Warning) => "warning",
-    Some(_) | None => "info",
-  })
+pub fn log_level_to_str(level: Option<slog::Level>) -> Result<String, ()> {
+  match level {
+    Some(slog::Level::Critical) => Ok(String::from("critical")),
+    Some(slog::Level::Debug) => Ok(String::from("debug")),
+    Some(slog::Level::Error) => Ok(String::from("error")),
+    Some(slog::Level::Trace) => Ok(String::from("trace")),
+    Some(slog::Level::Warning) => Ok(String::from("warning")),
+    Some(_) | None => Ok(String::from("info")),
+  }
 }
 
 pub fn deserialize_regex<'de, D>(de: D) -> Result<Regex, D::Error>
