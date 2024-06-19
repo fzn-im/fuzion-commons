@@ -5,7 +5,7 @@ use smart_default::SmartDefault;
 use thiserror::Error;
 
 use crate::db::PgPool;
-use crate::serde::{default_true, deserialize_log_level};
+use crate::serde::{default_true, deserialize_log_level, serialize_log_level};
 
 pub fn clap_arg_to_log_level(level: &str) -> Result<slog::Level, String> {
   match level {
