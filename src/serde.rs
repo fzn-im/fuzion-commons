@@ -49,7 +49,7 @@ where
   Regex::new(&regex).map_err(de::Error::custom)
 }
 
-pub fn serialize_regex<S>(regex: Regex, s: S) -> Result<S::Ok, S::Error>
+pub fn serialize_regex<S>(regex: &Regex, s: S) -> Result<S::Ok, S::Error>
 where
   S: Serializer,
 {
