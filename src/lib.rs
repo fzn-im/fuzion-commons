@@ -6,6 +6,7 @@ extern crate serde_derive as _;
 extern crate slog;
 
 pub mod config;
+pub mod containers;
 pub mod db;
 pub mod error;
 pub mod logging;
