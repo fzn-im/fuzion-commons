@@ -8,6 +8,7 @@ extern crate slog;
 pub mod config;
 pub mod containers;
 pub mod db;
+pub mod env;
 pub mod error;
 pub mod logging;
 pub mod migration;
