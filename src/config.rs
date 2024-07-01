@@ -83,9 +83,13 @@ impl DatabaseConfig {
 
       if let Some(retries) = retries {
         if i == retries {
+          info!("Failed to connect to database, out of retries.");
+
           break;
         }
       }
+
+      info!("Failed to connect to database, retrying in {:?}.", interval);
 
       sleep(interval).await;
 
