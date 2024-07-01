@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use actix_web::http::Uri;
+use actix_web::rt::time::sleep;
 use deadpool::managed::BuildError;
 use deadpool_postgres::{Manager, ManagerConfig, Pool as Deadpool, RecyclingMethod};
 use smart_default::SmartDefault;
@@ -66,12 +69,39 @@ impl DatabaseConfig {
 
     Ok(Deadpool::builder(manager).build()?)
   }
+
+  pub async fn test_db_connection(
+    &self,
+    retries: Option<usize>,
+    interval: Duration,
+  ) -> Result<(), DatabaseConfigError> {
+    let mut i = 0;
+    loop {
+      if self.get_db_pool().await.is_ok() {
+        return Ok(());
+      }
+
+      if let Some(retries) = retries {
+        if i == retries {
+          break;
+        }
+      }
+
+      sleep(interval).await;
+
+      i += 1;
+    }
+
+    Err(DatabaseConfigError::InitTimeout)
+  }
 }
 
 #[derive(Clone, Debug, Error)]
 pub enum DatabaseConfigError {
   #[error(transparent)]
   DeadpoolBuildError(#[from] BuildError),
+  #[error("Init timeout")]
+  InitTimeout,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, SmartDefault)]
