@@ -19,9 +19,9 @@ where
     .and_then(|v| v.parse().ok())
 }
 
-pub fn env_present_or<T>(name: &str, _else: T) -> Option<T>
+pub fn env_present_or<T>(name: &str, _else: T) -> T
 where
   T: FromStr,
 {
-  env_present(name).or(Some(_else))
+  env_present(name).unwrap_or(_else)
 }
