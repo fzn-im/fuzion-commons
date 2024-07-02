@@ -1,7 +1,27 @@
-pub fn env_opt(name: &str) -> Option<String> {
-  std::env::var_os(name).and_then(|v| v.into_string().ok())
+use std::str::FromStr;
+
+pub fn env_opt<T>(name: &str) -> Option<T>
+where
+  T: FromStr,
+{
+  std::env::var_os(name)
+    .and_then(|v| v.into_string().ok())
+    .and_then(|v| v.parse().ok())
 }
 
-pub fn env_opt_present(name: &str) -> Option<String> {
-  env_opt(name).filter(|v| !v.is_empty())
+pub fn env_present<T>(name: &str) -> Option<T>
+where
+  T: FromStr,
+{
+  std::env::var_os(name)
+    .and_then(|v| v.into_string().ok())
+    .filter(|v| !v.is_empty())
+    .and_then(|v| v.parse().ok())
+}
+
+pub fn env_present_or<T>(name: &str, _else: T) -> Option<T>
+where
+  T: FromStr,
+{
+  env_present(name).or(Some(_else))
 }
