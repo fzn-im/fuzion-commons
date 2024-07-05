@@ -12,6 +12,17 @@ use crate::error::UnitError;
 #[derive(Clone)]
 pub struct PgPool<T = Default>(deadpool_postgres::Pool, PhantomData<T>);
 
+impl PgPool {
+  pub async fn get(
+    &self,
+  ) -> Result<
+    deadpool::managed::Object<deadpool_postgres::Manager>,
+    deadpool::managed::PoolError<tokio_postgres::Error>,
+  > {
+    self.0.get().await
+  }
+}
+
 impl From<deadpool_postgres::Pool> for PgPool {
   fn from(from: deadpool_postgres::Pool) -> PgPool {
     PgPool(from, PhantomData)
