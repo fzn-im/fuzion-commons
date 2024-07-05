@@ -29,6 +29,7 @@ impl From<deadpool_postgres::Pool> for PgPool {
   }
 }
 
+#[derive(Clone)]
 pub struct Default {}
 
 pub struct PgClient<'a, T = Default> {
