@@ -67,7 +67,7 @@ impl DatabaseConfig {
       },
     );
 
-    Ok(Deadpool::builder(manager).build()?)
+    Ok(Deadpool::builder(manager).build()?.into())
   }
 
   pub async fn test_db_connection(

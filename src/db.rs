@@ -1,4 +1,5 @@
 use std::future::Future;
+use std::marker::PhantomData;
 use std::pin::Pin;
 
 use actix_web::*;
@@ -8,27 +9,39 @@ use thiserror::Error;
 
 use crate::error::UnitError;
 
-pub type PgPool = deadpool_postgres::Pool;
+#[derive(Clone)]
+pub struct PgPool<T = Default>(deadpool_postgres::Pool, PhantomData<T>);
 
-pub struct PgClient<'a> {
-  inner: PgClientInner<'a>,
+impl From<deadpool_postgres::Pool> for PgPool {
+  fn from(from: deadpool_postgres::Pool) -> PgPool {
+    PgPool(from, PhantomData)
+  }
 }
 
-impl<'a> PgClient<'a> {
-  pub fn from_client(client: deadpool_postgres::Client) -> PgClient<'a> {
+pub struct Default {}
+
+pub struct PgClient<'a, T = Default> {
+  inner: PgClientInner<'a>,
+  tag: PhantomData<T>,
+}
+
+impl<'a, T> PgClient<'a, T> {
+  pub fn from_client(client: deadpool_postgres::Client) -> PgClient<'a, T> {
     PgClient {
       inner: PgClientInner::Client(client),
+      tag: PhantomData,
     }
   }
 
-  fn from_transaction(transaction: deadpool_postgres::Transaction<'a>) -> PgClient<'a> {
+  fn from_transaction(transaction: deadpool_postgres::Transaction<'a>) -> PgClient<'a, T> {
     PgClient {
       inner: PgClientInner::Transaction(transaction),
+      tag: PhantomData,
     }
   }
 
-  pub async fn from_pool(pool: &PgPool) -> Result<PgClient<'a>, PgClientError> {
-    Ok(pool.get().await.map(|client| Self::from_client(client))?)
+  pub async fn from_pool(pool: &PgPool) -> Result<PgClient<'a, T>, PgClientError> {
+    Ok(pool.0.get().await.map(|client| Self::from_client(client))?)
   }
 }
 
@@ -140,9 +153,9 @@ impl<'a> From<deadpool_postgres::Client> for PgClient<'a> {
   }
 }
 
-impl<'a> From<deadpool_postgres::Transaction<'a>> for PgClient<'a> {
+impl<'a, T> From<deadpool_postgres::Transaction<'a>> for PgClient<'a, T> {
   fn from(from: deadpool_postgres::Transaction<'a>) -> Self {
-    PgClient::from_transaction(from)
+    PgClient::<T>::from_transaction(from)
   }
 }
 
@@ -159,7 +172,7 @@ impl<'a> FromRequest for PgClient<'a> {
   fn from_request(http: &HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
     let pool = match http
       .app_data::<web::Data<PgPool>>()
-      .map(|pool| pool.as_ref().to_owned())
+      .map(|pool| pool.to_owned())
     {
       Some(pool) => pool,
       _ => {
@@ -170,6 +183,7 @@ impl<'a> FromRequest for PgClient<'a> {
 
     Box::pin(async move {
       pool
+        .0
         .get()
         .map_ok(|conn| PgClient::from_client(conn))
         .map_err(|_| UnitError)
