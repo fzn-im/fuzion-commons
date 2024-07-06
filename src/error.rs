@@ -2,7 +2,43 @@ use std::collections::HashMap;
 
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
+use actix_web_thiserror::ResponseTransform;
 use serde::ser::Serialize;
+
+pub struct ErrorResponse;
+
+impl ResponseTransform for ErrorResponse {
+  fn transform(
+    &self,
+    _name: &str,
+    _err: &dyn std::error::Error,
+    status_code: actix_web::http::StatusCode,
+    reason: Option<serde_json::Value>,
+    _type: Option<String>,
+    details: Option<serde_json::Value>,
+  ) -> HttpResponse {
+    if let Some(reason) = reason {
+      let mut response: HashMap<String, serde_json::Value> = HashMap::new();
+      response.insert(String::from("error"), reason);
+
+      if let Some(details) = details {
+        response.insert(String::from("details"), details);
+      }
+
+      if let Some(_type) = _type {
+        response.insert(String::from("type"), _type.into());
+      }
+
+      HttpResponse::build(status_code).json(response)
+    } else {
+      HttpResponse::InternalServerError().finish()
+    }
+  }
+
+  fn default_error_status_code(&self) -> actix_web::http::StatusCode {
+    actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+  }
+}
 
 #[derive(Debug)]
 pub struct UnitError;
