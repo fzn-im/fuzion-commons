@@ -13,4 +13,5 @@ pub mod error;
 pub mod logging;
 pub mod migration;
 pub mod serde;
+pub mod uri;
 pub mod version;
