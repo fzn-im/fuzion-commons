@@ -1,28 +1,37 @@
-use std::path::Path;
-
-use http::{uri, Uri};
+use http::Uri;
+use url::Url;
 
 pub trait UriUtils {
-  fn path_join(&self, add: &str) -> Uri;
+  fn path_join(&self, add: &str) -> String;
 }
 
 impl UriUtils for Uri {
-  fn path_join(&self, add: &str) -> Uri {
-    let this = self.to_owned();
+  fn path_join(&self, add: &str) -> String {
+    self.to_string().path_join(add)
+  }
+}
 
-    let path = this.path().to_owned();
-    let query = this.query().map(|v| v.to_owned());
+impl UriUtils for &str {
+  fn path_join(&self, add: &str) -> String {
+    let mut url = Url::parse(self).unwrap();
 
-    let builder = uri::Builder::from(this).path_and_query(format!(
-      "{}{}",
-      Path::new(&path).join(add).to_string_lossy(),
-      query
-        .as_ref()
-        .map(|v| format!("?{}", v.as_str()))
-        .unwrap_or(String::from("")),
-    ));
+    if let Ok(mut path) = url.path_segments_mut() {
+      path.push(add);
+    }
 
-    builder.build().unwrap()
+    url.to_string()
+  }
+}
+
+impl UriUtils for String {
+  fn path_join(&self, add: &str) -> String {
+    let mut url = Url::parse(self).unwrap();
+
+    if let Ok(mut path) = url.path_segments_mut() {
+      path.push(add);
+    }
+
+    url.to_string()
   }
 }
 
