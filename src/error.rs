@@ -5,9 +5,15 @@ use actix_web::{HttpResponse, ResponseError};
 use actix_web_thiserror::ResponseTransform;
 use serde::ser::Serialize;
 
-pub struct ErrorResponse;
+pub struct ErrorResponseTransform;
 
-impl ResponseTransform for ErrorResponse {
+impl ErrorResponseTransform {
+  pub fn new() -> Self {
+    Self {}
+  }
+}
+
+impl ResponseTransform for ErrorResponseTransform {
   fn transform(
     &self,
     _name: &str,
