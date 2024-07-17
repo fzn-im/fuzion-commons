@@ -124,6 +124,18 @@ impl<'a> Migrator<'a> {
   }
 
   pub async fn initialize_versions(&self) -> Result<(), MigrationError> {
+    self.db_client.batch_execute(CREATE_MIGRATOR_SCHEMA).await?;
+
+    // Check if old version table exists.
+    let has_old_version: bool = {
+      let rows = self.db_client.query(CHECK_OLD_VERSION_EXISTS, &[]).await?;
+      rows.get(0).unwrap().get(0)
+    };
+
+    if has_old_version {
+      self.db_client.batch_execute(MOVE_VERSION).await?;
+    }
+
     // Check that version table supports modules.
     let has_modules: bool = {
       let rows = self
@@ -233,9 +245,28 @@ SELECT EXISTS (
     1
   FROM information_schema.columns
   WHERE
+    table_schema = 'fuzion'
+    AND table_name = 'version'
+);
+
+"#;
+
+const CHECK_OLD_VERSION_EXISTS: &'static str = r#"
+
+SELECT EXISTS (
+  SELECT
+    1
+  FROM information_schema.columns
+  WHERE
     table_schema = 'public'
     AND table_name = 'version'
 );
+
+"#;
+
+const MOVE_VERSION: &'static str = r#"
+
+ALTER TABLE public.version SET SCHEMA migrator;
 
 "#;
 
@@ -246,7 +277,7 @@ SELECT EXISTS (
     1
   FROM information_schema.columns
   WHERE
-    table_schema = 'public'
+    table_schema = 'migrator'
     AND table_name = 'version'
     AND column_name = 'module'
 );
@@ -258,7 +289,7 @@ const GET_VERSION_MODULE: &'static str = r#"
 SELECT
   major, minor, patch
 FROM
-  public.version
+  migrator.version
 WHERE
   module = $1
 
@@ -266,7 +297,7 @@ WHERE
 
 const UPDATE_MODULE_VERSION: &'static str = r#"
 
-INSERT INTO public.version
+INSERT INTO migrator.version
 (module, major, minor, patch)
 VALUES
 ($1, $2, $3, $4)
@@ -277,23 +308,29 @@ DO UPDATE SET major = $2, minor = $3, patch = $4;
 
 const ADD_VERSION_MODULE_COLUMN: &'static str = r#"
 
-ALTER TABLE public.version
+ALTER TABLE migrator.version
   ADD COLUMN module VARCHAR(128);
 
-UPDATE public.version
+UPDATE migrator.version
 SET module = 'fuzion';
 
-ALTER TABLE public.version
+ALTER TABLE migrator.version
   ALTER COLUMN module SET NOT NULL;
 
-ALTER TABLE public.version
+ALTER TABLE migrator.version
   ADD PRIMARY KEY (module);
+
+"#;
+
+const CREATE_MIGRATOR_SCHEMA: &'static str = r#"
+
+CREATE SCHEMA IF NOT EXISTS migrator;
 
 "#;
 
 const CREATE_VERSION_TABLE: &'static str = r#"
 
-CREATE TABLE public.version (
+CREATE TABLE migrator.version (
     module varchar(128) NOT NULL PRIMARY KEY,
     major smallint NOT NULL,
     minor smallint NOT NULL,
