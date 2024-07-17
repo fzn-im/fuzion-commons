@@ -16,7 +16,7 @@ impl UriUtils for &str {
     let mut url = Url::parse(self).unwrap();
 
     if let Ok(mut path) = url.path_segments_mut() {
-      path.push(add);
+      path.extend(add.split("/"));
     }
 
     url.to_string()
@@ -28,7 +28,7 @@ impl UriUtils for String {
     let mut url = Url::parse(self).unwrap();
 
     if let Ok(mut path) = url.path_segments_mut() {
-      path.push(add);
+      path.extend(add.split("/"));
     }
 
     url.to_string()
