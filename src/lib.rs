@@ -12,6 +12,7 @@ pub mod env;
 pub mod error;
 pub mod logging;
 pub mod migration;
+pub mod response;
 pub mod serde;
 pub mod uri;
 pub mod version;

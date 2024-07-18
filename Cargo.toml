@@ -6,9 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+actix-http = "3.8.0"
 actix-web = "4.5.1"
 actix-web-thiserror = "0.2.6"
 async-trait = "0.1.77"
+awc = "3.5.0"
+bytes = "1.6.1"
 deadpool = "0.10.0"
 deadpool-postgres = "0.12.1"
 file-rotate = "0.7.5"

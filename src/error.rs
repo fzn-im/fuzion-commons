@@ -46,6 +46,9 @@ impl ResponseTransform for ErrorResponseTransform {
   }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ErrorResponse {}
+
 #[derive(Debug)]
 pub struct UnitError;
 
