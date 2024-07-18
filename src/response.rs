@@ -4,6 +4,7 @@ use awc::error::{JsonPayloadError, PayloadError};
 use awc::ClientResponse;
 use bytes::Bytes;
 use futures::Stream;
+use http::StatusCode;
 use thiserror::Error;
 
 use crate::error::ErrorResponse;
@@ -22,9 +23,10 @@ where
 {
   async fn handle_error(mut self) -> Result<Self, ResponseHandlingError> {
     if self.status() != 200 {
-      let response: ErrorResponse = self.json().await?;
-
-      return Err(ResponseHandlingError::ErrorResponse(response));
+      match self.json().await {
+        Ok(response) => return Err(ResponseHandlingError::ErrorResponse(response)),
+        Err(_) => return Err(ResponseHandlingError::ErrorStatus(self.status())),
+      }
     }
 
     Ok(self)
@@ -35,6 +37,8 @@ where
 pub enum ResponseHandlingError {
   #[error("Error response")]
   ErrorResponse(ErrorResponse),
+  #[error("Response status error: {0}")]
+  ErrorStatus(StatusCode),
   #[error(transparent)]
   JsonPayloadError(#[from] JsonPayloadError),
 }
