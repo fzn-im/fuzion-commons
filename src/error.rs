@@ -91,6 +91,12 @@ impl ErrorMap {
   }
 
   pub fn len(&self) -> usize {
-    self.0.len()
+    self.0.values().fold(0, |mut acc, value| {
+      if let serde_json::Value::Array(value) = value {
+        acc += value.len();
+      }
+
+      acc
+    })
   }
 }
