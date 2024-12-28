@@ -141,24 +141,34 @@ pub struct HttpConfig {
   #[default = false]
   #[serde(default)]
   pub secure: bool,
+  #[serde(default)]
+  pub path: Option<String>,
+}
+
+fn build_uri(secure: bool, host: &str, port: u16, path: Option<&str>) -> Uri {
+  let authority = format!(
+    "{}{}",
+    host,
+    &match (secure, port) {
+      (true, 443) | (false, 80) => String::from(""),
+      _ => format!(":{}", &port),
+    }
+  );
+
+  Uri::builder()
+    .scheme(match secure {
+      true => "https",
+      _ => "http",
+    })
+    .authority(authority)
+    .path_and_query(path.unwrap_or(""))
+    .build()
+    .expect("Invalid uri")
 }
 
 impl HttpConfig {
   pub fn get_uri(&self) -> Uri {
-    let mut public_path = String::new();
-
-    public_path += match self.secure {
-      true => "https",
-      _ => "http",
-    };
-
-    public_path += &format!("://{}", &self.host);
-
-    if !(!self.secure && self.port == 80) && !(self.secure && self.port == 443) {
-      public_path += &format!(":{}", &self.port);
-    }
-
-    public_path.parse().expect("Invalid URI provided")
+    build_uri(self.secure, &self.host, self.port, self.path.as_deref())
   }
 
   pub fn get_socket_addr(&self) -> (String, u16) {
@@ -168,20 +178,7 @@ impl HttpConfig {
 
 impl HttpConfigWithPublic {
   pub fn get_uri(&self) -> Uri {
-    let mut public_path = String::new();
-
-    public_path += match self.secure {
-      true => "https",
-      _ => "http",
-    };
-
-    public_path += &format!("://{}", &self.host);
-
-    if !(!self.secure && self.port == 80) && !(self.secure && self.port == 443) {
-      public_path += &format!(":{}", &self.port);
-    }
-
-    public_path.parse().expect("Invalid URI provided")
+    build_uri(self.secure, &self.host, self.port, None)
   }
 
   pub fn get_public_uri(&self) -> Uri {
@@ -195,20 +192,7 @@ impl HttpConfigWithPublic {
 
 impl HttpConfigWithPublicPrivate {
   pub fn get_uri(&self) -> Uri {
-    let mut public_path = String::new();
-
-    public_path += match self.secure {
-      true => "https",
-      _ => "http",
-    };
-
-    public_path += &format!("://{}", &self.host);
-
-    if !(!self.secure && self.port == 80) && !(self.secure && self.port == 443) {
-      public_path += &format!(":{}", &self.port);
-    }
-
-    public_path.parse().expect("Invalid URI provided")
+    build_uri(self.secure, &self.host, self.port, None)
   }
 
   pub fn get_public_uri(&self) -> Uri {
