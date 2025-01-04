@@ -4,7 +4,7 @@ use std::path::Path;
 pub fn in_container() -> bool {
   Path::new("/.dockerenv").exists()
     || env::var("KUBERNETES_SERVICE_HOST")
-      .map(|val| val.len() > 0)
+      .map(|val| !val.is_empty())
       .unwrap_or(false)
 }
 

@@ -36,14 +36,14 @@ impl std::cmp::PartialOrd for Version {
 
 #[cfg(test)]
 mod module_version {
-  pub(self) use super::Version;
+  use super::Version;
 
   #[test]
   fn version_nltngt() {
     let result1 = Version(1, 1, 1) < Version(1, 1, 1);
     let result2 = Version(1, 1, 1) > Version(1, 1, 1);
 
-    assert_eq!(result1 || result2, false);
+    assert!(!(result1 || result2));
   }
 
   #[cfg(test)]
@@ -54,21 +54,21 @@ mod module_version {
     fn version_major_eq() {
       let result = Version(1, 1, 1) == Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
 
     #[test]
     fn version_major_lt() {
       let result = Version(0, 1, 1) < Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
 
     #[test]
     fn version_major_gt() {
       let result = Version(2, 1, 1) > Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
   }
 
@@ -80,21 +80,21 @@ mod module_version {
     fn version_minor_eq() {
       let result = Version(1, 1, 1) == Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
 
     #[test]
     fn version_minor_lt() {
       let result = Version(1, 0, 1) < Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
 
     #[test]
     fn version_minor_gt() {
       let result = Version(1, 2, 1) > Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
   }
 
@@ -106,21 +106,21 @@ mod module_version {
     fn version_patch_eq() {
       let result = Version(1, 1, 1) == Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
 
     #[test]
     fn version_patch_lt() {
       let result = Version(1, 1, 0) < Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
 
     #[test]
     fn version_patch_gt() {
       let result = Version(1, 1, 2) > Version(1, 1, 1);
 
-      assert_eq!(result, true);
+      assert!(result);
     }
   }
 }

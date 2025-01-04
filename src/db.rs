@@ -159,7 +159,7 @@ impl<'a> PgClient<'a> {
   }
 }
 
-impl<'a> From<deadpool_postgres::Client> for PgClient<'a> {
+impl From<deadpool_postgres::Client> for PgClient<'_> {
   fn from(from: deadpool_postgres::Client) -> Self {
     PgClient::from_client(from)
   }
@@ -197,7 +197,7 @@ impl<'a> FromRequest for PgClient<'a> {
       pool
         .0
         .get()
-        .map_ok(|conn| PgClient::from_client(conn))
+        .map_ok(PgClient::from_client)
         .map_err(|_| UnitError)
         .await
     })

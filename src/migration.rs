@@ -38,7 +38,7 @@ impl Version {
   }
 }
 
-pub const BASE_MODULE_NAME: &'static str = "fuzion";
+pub const BASE_MODULE_NAME: &str = "fuzion";
 
 impl<'a> Migrator<'a> {
   pub fn new(
@@ -96,7 +96,7 @@ impl<'a> Migrator<'a> {
       .query(GET_VERSION_MODULE, &[&self.module_name])
       .await?;
 
-    let version = match rows.get(0) {
+    let version = match rows.first() {
       Some(row) => Version(row.get(0), row.get(1), row.get(2)),
       None => Version(0, 0, 0),
     };
@@ -129,7 +129,7 @@ impl<'a> Migrator<'a> {
     // Check if old version table exists.
     let has_old_version: bool = {
       let rows = self.db_client.query(CHECK_OLD_VERSION_EXISTS, &[]).await?;
-      rows.get(0).unwrap().get(0)
+      rows.first().unwrap().get(0)
     };
 
     if has_old_version {
@@ -142,14 +142,14 @@ impl<'a> Migrator<'a> {
         .db_client
         .query(CHECK_VERSION_MODULE_EXISTS, &[])
         .await?;
-      rows.get(0).unwrap().get(0)
+      rows.first().unwrap().get(0)
     };
 
     if !has_modules {
       // Check that version table supports modules.
       let has_version: bool = {
         let rows = self.db_client.query(CHECK_VERSION_EXISTS, &[]).await?;
-        rows.get(0).unwrap().get(0)
+        rows.first().unwrap().get(0)
       };
 
       if has_version {
@@ -238,7 +238,7 @@ impl Migration for PlainMigration {
   }
 }
 
-const CHECK_VERSION_EXISTS: &'static str = r#"
+const CHECK_VERSION_EXISTS: &str = r#"
 
 SELECT EXISTS (
   SELECT
@@ -251,7 +251,7 @@ SELECT EXISTS (
 
 "#;
 
-const CHECK_OLD_VERSION_EXISTS: &'static str = r#"
+const CHECK_OLD_VERSION_EXISTS: &str = r#"
 
 SELECT EXISTS (
   SELECT
@@ -264,13 +264,13 @@ SELECT EXISTS (
 
 "#;
 
-const MOVE_VERSION: &'static str = r#"
+const MOVE_VERSION: &str = r#"
 
 ALTER TABLE public.version SET SCHEMA migrator;
 
 "#;
 
-const CHECK_VERSION_MODULE_EXISTS: &'static str = r#"
+const CHECK_VERSION_MODULE_EXISTS: &str = r#"
 
 SELECT EXISTS (
   SELECT
@@ -284,7 +284,7 @@ SELECT EXISTS (
 
 "#;
 
-const GET_VERSION_MODULE: &'static str = r#"
+const GET_VERSION_MODULE: &str = r#"
 
 SELECT
   major, minor, patch
@@ -295,7 +295,7 @@ WHERE
 
 "#;
 
-const UPDATE_MODULE_VERSION: &'static str = r#"
+const UPDATE_MODULE_VERSION: &str = r#"
 
 INSERT INTO migrator.version
 (module, major, minor, patch)
@@ -306,7 +306,7 @@ DO UPDATE SET major = $2, minor = $3, patch = $4;
 
 "#;
 
-const ADD_VERSION_MODULE_COLUMN: &'static str = r#"
+const ADD_VERSION_MODULE_COLUMN: &str = r#"
 
 ALTER TABLE migrator.version
   ADD COLUMN module VARCHAR(128);
@@ -322,13 +322,13 @@ ALTER TABLE migrator.version
 
 "#;
 
-const CREATE_MIGRATOR_SCHEMA: &'static str = r#"
+const CREATE_MIGRATOR_SCHEMA: &str = r#"
 
 CREATE SCHEMA IF NOT EXISTS migrator;
 
 "#;
 
-const CREATE_VERSION_TABLE: &'static str = r#"
+const CREATE_VERSION_TABLE: &str = r#"
 
 CREATE TABLE migrator.version (
     module varchar(128) NOT NULL PRIMARY KEY,

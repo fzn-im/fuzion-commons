@@ -15,7 +15,7 @@ where
 {
   let value: String =
     log_level_to_str(Some(*level)).map_err(|_| ser::Error::custom("Invalid loglevel"))?;
-  Ok(s.serialize_str(&value)?)
+  s.serialize_str(&value)
 }
 
 pub fn str_to_log_level(level: Option<&str>) -> Result<slog::Level, ()> {

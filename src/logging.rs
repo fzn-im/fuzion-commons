@@ -32,7 +32,7 @@ lazy_static! {
 
 fn filter_records(record: &slog::Record) -> bool {
   let mut pieces = record.module().split("::");
-  let lcrate = pieces.nth(0);
+  let lcrate = pieces.next();
   if let Some(lcrate) = lcrate {
     if FILTERED_MODULES.contains(lcrate) {
       return false;
@@ -67,7 +67,7 @@ pub fn init(config: &LoggingConfig) {
     }
     (Some(log_file), false) => {
       let file = FileRotate::new(
-        &log_file,
+        log_file,
         AppendTimestamp::with_format("%Y%m%d", FileLimit::MaxFiles(5), DateFrom::DateYesterday),
         ContentLimit::Bytes(100_000_000),
         Compression::OnRotate(2),
@@ -94,7 +94,7 @@ pub fn init(config: &LoggingConfig) {
         .fuse();
 
       let file = FileRotate::new(
-        &log_file,
+        log_file,
         AppendTimestamp::with_format("%Y%m%d", FileLimit::MaxFiles(5), DateFrom::DateYesterday),
         ContentLimit::Bytes(100_000_000),
         Compression::OnRotate(2),

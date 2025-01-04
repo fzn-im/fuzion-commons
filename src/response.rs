@@ -1,10 +1,10 @@
+use actix_http::StatusCode;
 use actix_web_thiserror::ResponseError;
 use async_trait::async_trait;
 use awc::error::{JsonPayloadError, PayloadError};
 use awc::ClientResponse;
 use bytes::Bytes;
 use futures::Stream;
-use http::StatusCode;
 use thiserror::Error;
 
 use crate::error::ErrorResponse;
