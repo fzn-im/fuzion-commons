@@ -11,6 +11,12 @@ impl UriUtils for Uri {
   }
 }
 
+impl UriUtils for actix_http::Uri {
+  fn path_join(&self, add: &str) -> String {
+    self.to_string().path_join(add)
+  }
+}
+
 impl UriUtils for &str {
   fn path_join(&self, add: &str) -> String {
     let mut url = Url::parse(self).unwrap();
