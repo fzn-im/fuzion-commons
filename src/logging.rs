@@ -15,7 +15,6 @@ lazy_static! {
 
 pub struct LoggingGuard {
   _scope_guard: slog_scope::GlobalLoggerGuard,
-  _log_guard: (),
 }
 
 lazy_static! {
@@ -118,16 +117,13 @@ pub fn init(config: &LoggingConfig) {
   };
 
   if let Some(_scope_guard) = _scope_guard {
-    let _log_guard = slog_stdlog::init().unwrap();
+    slog_stdlog::init().unwrap();
 
     info!("log_level: {}", config.log_level);
     info!("log_file: {:?}", &config.log_file);
     info!("log_to_stdout: {}", config.log_to_stdout);
 
     let mut log_guard = LOG_GUARD.lock().unwrap();
-    *log_guard = Some(LoggingGuard {
-      _scope_guard,
-      _log_guard,
-    });
+    *log_guard = Some(LoggingGuard { _scope_guard });
   }
 }

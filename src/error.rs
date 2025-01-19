@@ -5,13 +5,8 @@ use actix_web::{HttpResponse, ResponseError};
 use actix_web_thiserror::ResponseTransform;
 use serde::ser::Serialize;
 
+#[derive(Default)]
 pub struct ErrorResponseTransform;
-
-impl ErrorResponseTransform {
-  pub fn new() -> Self {
-    Self {}
-  }
-}
 
 impl ResponseTransform for ErrorResponseTransform {
   fn transform(
@@ -68,14 +63,10 @@ impl ResponseError for UnitError {
   }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct ErrorMap(HashMap<String, serde_json::Value>);
 
 impl ErrorMap {
-  pub fn new() -> Self {
-    Self(Default::default())
-  }
-
   pub fn add_error<S, T>(&mut self, field: S, value: T)
   where
     S: Into<String>,
@@ -98,5 +89,10 @@ impl ErrorMap {
 
       acc
     })
+  }
+
+  #[must_use]
+  pub fn is_empty(&self) -> bool {
+    self.len() == 0
   }
 }

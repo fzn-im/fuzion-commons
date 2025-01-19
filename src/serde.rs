@@ -6,7 +6,7 @@ where
   D: Deserializer<'de>,
 {
   let level: String = de::Deserialize::deserialize(de)?;
-  str_to_log_level(Some(&level)).map_err(|_| de::Error::custom("Invalid loglevel"))
+  str_to_log_level(Some(&level)).ok_or(de::Error::custom("Invalid loglevel"))
 }
 
 pub fn serialize_log_level<S>(level: &slog::Level, s: S) -> Result<S::Ok, S::Error>
@@ -14,30 +14,30 @@ where
   S: Serializer,
 {
   let value: String =
-    log_level_to_str(Some(*level)).map_err(|_| ser::Error::custom("Invalid loglevel"))?;
+    log_level_to_str(Some(*level)).ok_or(ser::Error::custom("Invalid loglevel"))?;
   s.serialize_str(&value)
 }
 
-pub fn str_to_log_level(level: Option<&str>) -> Result<slog::Level, ()> {
+pub fn str_to_log_level(level: Option<&str>) -> Option<slog::Level> {
   match level {
-    Some("critical") => Ok(slog::Level::Critical),
-    Some("debug") => Ok(slog::Level::Debug),
-    Some("error") => Ok(slog::Level::Error),
-    Some("trace") => Ok(slog::Level::Trace),
-    Some("warning") => Ok(slog::Level::Warning),
-    Some("info") | None => Ok(slog::Level::Info),
-    Some(_) => Err(()),
+    Some("critical") => Some(slog::Level::Critical),
+    Some("debug") => Some(slog::Level::Debug),
+    Some("error") => Some(slog::Level::Error),
+    Some("trace") => Some(slog::Level::Trace),
+    Some("warning") => Some(slog::Level::Warning),
+    Some("info") | None => Some(slog::Level::Info),
+    Some(_) => None,
   }
 }
 
-pub fn log_level_to_str(level: Option<slog::Level>) -> Result<String, ()> {
+pub fn log_level_to_str(level: Option<slog::Level>) -> Option<String> {
   match level {
-    Some(slog::Level::Critical) => Ok(String::from("critical")),
-    Some(slog::Level::Debug) => Ok(String::from("debug")),
-    Some(slog::Level::Error) => Ok(String::from("error")),
-    Some(slog::Level::Trace) => Ok(String::from("trace")),
-    Some(slog::Level::Warning) => Ok(String::from("warning")),
-    Some(_) | None => Ok(String::from("info")),
+    Some(slog::Level::Critical) => Some(String::from("critical")),
+    Some(slog::Level::Debug) => Some(String::from("debug")),
+    Some(slog::Level::Error) => Some(String::from("error")),
+    Some(slog::Level::Trace) => Some(String::from("trace")),
+    Some(slog::Level::Warning) => Some(String::from("warning")),
+    Some(_) | None => Some(String::from("info")),
   }
 }
 

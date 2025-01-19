@@ -7,8 +7,6 @@ use actix_web_thiserror::ResponseError;
 use futures::TryFutureExt;
 use thiserror::Error;
 
-use crate::error::UnitError;
-
 #[derive(Clone)]
 pub struct PgPool<T = Default>(deadpool_postgres::Pool, PhantomData<T>);
 
@@ -57,12 +55,12 @@ impl<'a, T> PgClient<'a, T> {
   }
 }
 
-impl<'a> PgClient<'a> {
+impl PgClient<'_> {
   pub async fn prepare(&self, query: &str) -> Result<tokio_postgres::Statement, PgClientError> {
     let stmt = match &self.inner {
       PgClientInner::Client(client) => client.prepare_cached(query).await,
       PgClientInner::Transaction(transaction) => transaction.prepare_cached(query).await,
-      _ => Err(PgClientError::InternalError)?,
+      _ => Err(PgClientError::Internal)?,
     }
     .map_err(|err| {
       error!("Failed to prepare query: {} <{}>", err, query);
@@ -79,7 +77,7 @@ impl<'a> PgClient<'a> {
     let stmt = match &self.inner {
       PgClientInner::Client(client) => client.prepare_cached(query).await,
       PgClientInner::Transaction(transaction) => transaction.prepare_cached(query).await,
-      _ => Err(PgClientError::InternalError)?,
+      _ => Err(PgClientError::Internal)?,
     }
     .map_err(|err| {
       error!("Failed to prepare query: {} <{}>", err, query);
@@ -100,7 +98,7 @@ impl<'a> PgClient<'a> {
     Ok(match &self.inner {
       PgClientInner::Client(client) => client.query(query, params).await?,
       PgClientInner::Transaction(transaction) => transaction.query(query, params).await?,
-      _ => Err(PgClientError::InternalError)?,
+      _ => Err(PgClientError::Internal)?,
     })
   }
 
@@ -115,7 +113,7 @@ impl<'a> PgClient<'a> {
     Ok(match &self.inner {
       PgClientInner::Client(client) => client.execute(query, params).await?,
       PgClientInner::Transaction(transaction) => transaction.execute(query, params).await?,
-      _ => Err(PgClientError::InternalError)?,
+      _ => Err(PgClientError::Internal)?,
     })
   }
 
@@ -126,7 +124,7 @@ impl<'a> PgClient<'a> {
     Ok(match &self.inner {
       PgClientInner::Client(client) => client.simple_query(query).await?,
       PgClientInner::Transaction(transaction) => transaction.simple_query(query).await?,
-      _ => Err(PgClientError::InternalError)?,
+      _ => Err(PgClientError::Internal)?,
     })
   }
 
@@ -134,7 +132,7 @@ impl<'a> PgClient<'a> {
     Ok(match &mut self.inner {
       PgClientInner::Client(client) => client.transaction().await?.into(),
       PgClientInner::Transaction(transaction) => transaction.transaction().await?.into(),
-      _ => Err(PgClientError::InternalError)?,
+      _ => Err(PgClientError::Internal)?,
     })
   }
 
@@ -178,28 +176,23 @@ pub enum PgClientInner<'a> {
 }
 
 impl<'a> FromRequest for PgClient<'a> {
-  type Error = UnitError;
+  type Error = PgClientError;
   type Future = Pin<Box<dyn Future<Output = Result<PgClient<'a>, Self::Error>> + 'static>>;
 
   fn from_request(http: &HttpRequest, _: &mut actix_web::dev::Payload) -> Self::Future {
-    let pool = match http
+    let pool = http
       .app_data::<web::Data<PgPool>>()
-      .map(|pool| pool.to_owned())
-    {
-      Some(pool) => pool,
-      _ => {
-        error!("No Pool found during FromRequest.");
-        return Box::pin(async move { Err(UnitError) });
-      }
-    };
+      .map(|pool| pool.to_owned());
 
     Box::pin(async move {
-      pool
-        .0
-        .get()
-        .map_ok(PgClient::from_client)
-        .map_err(|_| UnitError)
-        .await
+      Ok(
+        pool
+          .ok_or(PgClientError::Internal)?
+          .0
+          .get()
+          .map_ok(PgClient::from_client)
+          .await?,
+      )
     })
   }
 }
@@ -207,11 +200,11 @@ impl<'a> FromRequest for PgClient<'a> {
 #[derive(Debug, Error, ResponseError)]
 pub enum PgClientError {
   #[error("internal error")]
-  InternalError,
+  Internal,
   #[error(transparent)]
-  PostgresError(#[from] tokio_postgres::Error),
+  Postgres(#[from] tokio_postgres::Error),
   #[error(transparent)]
-  DeadpoolPoolError(#[from] DeadpoolPoolError),
+  DeadpoolPool(#[from] DeadpoolPoolError),
 }
 
 pub type DeadpoolPoolError = deadpool::managed::PoolError<tokio_postgres::Error>;

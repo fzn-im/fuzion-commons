@@ -18,22 +18,13 @@ lazy_static! {
 }
 
 impl Version {
-  pub fn from_filename(filename: &str) -> Result<Self, ()> {
+  pub fn from_filename(filename: &str) -> Option<Self> {
     let captures = MIGRATION_FILE_VERSION.captures(filename).unwrap();
 
-    Ok(Version(
-      captures
-        .get(1)
-        .and_then(|v| v.as_str().parse().ok())
-        .ok_or(())?,
-      captures
-        .get(2)
-        .and_then(|v| v.as_str().parse().ok())
-        .ok_or(())?,
-      captures
-        .get(3)
-        .and_then(|v| v.as_str().parse().ok())
-        .ok_or(())?,
+    Some(Version(
+      captures.get(1).and_then(|v| v.as_str().parse().ok())?,
+      captures.get(2).and_then(|v| v.as_str().parse().ok())?,
+      captures.get(3).and_then(|v| v.as_str().parse().ok())?,
     ))
   }
 }
