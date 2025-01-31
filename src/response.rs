@@ -7,8 +7,6 @@ use bytes::Bytes;
 use futures::Stream;
 use thiserror::Error;
 
-use crate::error::ErrorResponse;
-
 #[async_trait(?Send)]
 pub trait ResponseHandling: Sized {
   async fn handle_error(mut self) -> Result<Self, ResponseHandlingError> {
@@ -44,7 +42,7 @@ where
 #[derive(Debug, Error, ResponseError)]
 pub enum ResponseHandlingError {
   #[error("Error response")]
-  ErrorResponse(ErrorResponse),
+  ErrorResponse(serde_json::Value),
   #[error("Response status error: {0}")]
   ErrorStatus(StatusCode),
   #[error("Response status error: {0} {1}")]
