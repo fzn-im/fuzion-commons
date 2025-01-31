@@ -25,7 +25,15 @@ where
     if self.status() != 200 {
       match self.json().await {
         Ok(response) => return Err(ResponseHandlingError::ErrorResponse(response)),
-        Err(_) => return Err(ResponseHandlingError::ErrorStatus(self.status())),
+        Err(_) => {
+          return match self.body().await {
+            Ok(body) => Err(ResponseHandlingError::ErrorStatusBody(
+              self.status(),
+              String::from_utf8_lossy(&body[..]).to_string(),
+            )),
+            _ => Err(ResponseHandlingError::ErrorStatus(self.status())),
+          }
+        }
       }
     }
 
@@ -39,6 +47,8 @@ pub enum ResponseHandlingError {
   ErrorResponse(ErrorResponse),
   #[error("Response status error: {0}")]
   ErrorStatus(StatusCode),
+  #[error("Response status error: {0} {1}")]
+  ErrorStatusBody(StatusCode, String),
   #[error(transparent)]
   JsonPayloadError(#[from] JsonPayloadError),
 }
