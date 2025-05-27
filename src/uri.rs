@@ -1,4 +1,4 @@
-use http::Uri;
+use actix_web::http::Uri;
 use url::Url;
 
 pub trait UriUtils {
@@ -6,12 +6,6 @@ pub trait UriUtils {
 }
 
 impl UriUtils for Uri {
-  fn path_join(&self, add: &str) -> String {
-    self.to_string().path_join(add)
-  }
-}
-
-impl UriUtils for actix_http::Uri {
   fn path_join(&self, add: &str) -> String {
     self.to_string().path_join(add)
   }
