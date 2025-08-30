@@ -1,23 +1,42 @@
 use std::collections::HashMap;
+use std::error::request_ref;
 
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use actix_web_thiserror::ResponseTransform;
+use lazy_static::lazy_static;
 use serde::ser::Serialize;
 
 #[derive(Default)]
 pub struct ErrorResponseTransform;
 
+pub fn set_global_transform() {
+  actix_web_thiserror::set_global_transform(ErrorResponseTransform);
+}
+
+lazy_static! {
+  static ref RUST_BACKTRACE: bool = std::env::var("RUST_BACKTRACE") == Ok(String::from("1"));
+}
+
 impl ResponseTransform for ErrorResponseTransform {
   fn transform(
     &self,
-    _name: &str,
-    _err: &dyn std::error::Error,
+    name: &str,
+    err: &dyn std::error::Error,
     status_code: actix_web::http::StatusCode,
     reason: Option<serde_json::Value>,
     _type: Option<String>,
     details: Option<serde_json::Value>,
   ) -> HttpResponse {
+    let backtrace_log = Some(*RUST_BACKTRACE)
+      .filter(|val| *val)
+      .and_then(|_| {
+        request_ref::<std::backtrace::Backtrace>(&err).map(|backtrace| format!("\n{backtrace}"))
+      })
+      .unwrap_or(String::from(""));
+
+    log::error!("Response error - {name}: {err}{backtrace_log}");
+
     if let Some(reason) = reason {
       let mut response: HashMap<String, serde_json::Value> = HashMap::new();
       response.insert(String::from("error"), reason);

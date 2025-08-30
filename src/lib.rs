@@ -1,3 +1,4 @@
+#![feature(error_generic_member_access)]
 #[macro_use]
 extern crate log;
 #[macro_use]

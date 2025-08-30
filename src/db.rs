@@ -1,3 +1,4 @@
+use std::backtrace::Backtrace;
 use std::future::Future;
 use std::marker::PhantomData;
 use std::pin::Pin;
@@ -60,14 +61,17 @@ impl PgClient<'_> {
     let stmt = match &self.inner {
       PgClientInner::Client(client) => client.prepare_cached(query).await,
       PgClientInner::Transaction(transaction) => transaction.prepare_cached(query).await,
-      _ => Err(PgClientError::Internal)?,
+      _ => Err(PgClientError::Internal {
+        backtrace: Backtrace::force_capture(),
+      })?,
     }
-    .map_err(|err| {
-      error!("Failed to prepare query: {} <{}>", err, query);
-      err
-    })?;
+    .map_err(|err| PgClientError::PostgresQuery {
+      source: err,
+      query: query.to_owned(),
+      backtrace: Backtrace::force_capture(),
+    });
 
-    Ok(stmt)
+    stmt
   }
 
   pub async fn prepare_cached(
@@ -77,7 +81,9 @@ impl PgClient<'_> {
     let stmt = match &self.inner {
       PgClientInner::Client(client) => client.prepare_cached(query).await,
       PgClientInner::Transaction(transaction) => transaction.prepare_cached(query).await,
-      _ => Err(PgClientError::Internal)?,
+      _ => Err(PgClientError::Internal {
+        backtrace: Backtrace::force_capture(),
+      })?,
     }
     .map_err(|err| {
       error!("Failed to prepare query: {} <{}>", err, query);
@@ -98,7 +104,9 @@ impl PgClient<'_> {
     Ok(match &self.inner {
       PgClientInner::Client(client) => client.query(query, params).await?,
       PgClientInner::Transaction(transaction) => transaction.query(query, params).await?,
-      _ => Err(PgClientError::Internal)?,
+      _ => Err(PgClientError::Internal {
+        backtrace: Backtrace::force_capture(),
+      })?,
     })
   }
 
@@ -113,7 +121,9 @@ impl PgClient<'_> {
     Ok(match &self.inner {
       PgClientInner::Client(client) => client.execute(query, params).await?,
       PgClientInner::Transaction(transaction) => transaction.execute(query, params).await?,
-      _ => Err(PgClientError::Internal)?,
+      _ => Err(PgClientError::Internal {
+        backtrace: Backtrace::force_capture(),
+      })?,
     })
   }
 
@@ -124,7 +134,9 @@ impl PgClient<'_> {
     Ok(match &self.inner {
       PgClientInner::Client(client) => client.simple_query(query).await?,
       PgClientInner::Transaction(transaction) => transaction.simple_query(query).await?,
-      _ => Err(PgClientError::Internal)?,
+      _ => Err(PgClientError::Internal {
+        backtrace: Backtrace::force_capture(),
+      })?,
     })
   }
 
@@ -132,7 +144,9 @@ impl PgClient<'_> {
     Ok(match &mut self.inner {
       PgClientInner::Client(client) => client.transaction().await?.into(),
       PgClientInner::Transaction(transaction) => transaction.transaction().await?.into(),
-      _ => Err(PgClientError::Internal)?,
+      _ => Err(PgClientError::Internal {
+        backtrace: Backtrace::force_capture(),
+      })?,
     })
   }
 
@@ -187,7 +201,9 @@ impl<'a> FromRequest for PgClient<'a> {
     Box::pin(async move {
       Ok(
         pool
-          .ok_or(PgClientError::Internal)?
+          .ok_or(PgClientError::Internal {
+            backtrace: Backtrace::force_capture(),
+          })?
           .0
           .get()
           .map_ok(PgClient::from_client)
@@ -200,9 +216,19 @@ impl<'a> FromRequest for PgClient<'a> {
 #[derive(Debug, Error, ResponseError)]
 pub enum PgClientError {
   #[error("internal error")]
-  Internal,
-  #[error(transparent)]
-  Postgres(#[from] tokio_postgres::Error),
+  Internal { backtrace: Backtrace },
+  #[error("postgres error: {source}")]
+  Postgres {
+    #[from]
+    source: tokio_postgres::Error,
+    backtrace: Backtrace,
+  },
+  #[error("postgres query error: {source}\n{query}")]
+  PostgresQuery {
+    source: tokio_postgres::Error,
+    query: String,
+    backtrace: Backtrace,
+  },
   #[error(transparent)]
   DeadpoolPool(#[from] DeadpoolPoolError),
 }
