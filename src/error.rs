@@ -31,7 +31,7 @@ impl ResponseTransform for ErrorResponseTransform {
     let backtrace_log = Some(*RUST_BACKTRACE)
       .filter(|val| *val)
       .and_then(|_| {
-        request_ref::<std::backtrace::Backtrace>(&err).map(|backtrace| format!("\n{backtrace}"))
+        request_ref::<std::backtrace::Backtrace>(&err).map(|backtrace| format!("\n\n{backtrace}"))
       })
       .unwrap_or(String::from(""));
 
