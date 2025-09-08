@@ -11,6 +11,7 @@ pub mod containers;
 pub mod db;
 pub mod env;
 pub mod error;
+pub mod http;
 pub mod logging;
 pub mod migration;
 pub mod response;
