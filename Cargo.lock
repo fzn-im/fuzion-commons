@@ -210,6 +210,7 @@ dependencies = [
 [[package]]
 name = "actix-web-thiserror"
 version = "0.2.7"
+source = "git+https://github.com/enzious/actix-web-thiserror.git?branch=fuzion-changes#9cbe37c9311d16123ef2b7f6cef4523aae71f649"
 dependencies = [
  "actix-web",
  "actix-web-thiserror-derive",
@@ -221,6 +222,7 @@ dependencies = [
 [[package]]
 name = "actix-web-thiserror-derive"
 version = "0.2.7"
+source = "git+https://github.com/enzious/actix-web-thiserror.git?branch=fuzion-changes#9cbe37c9311d16123ef2b7f6cef4523aae71f649"
 dependencies = [
  "actix-web",
  "arc-swap",
