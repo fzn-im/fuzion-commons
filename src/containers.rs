@@ -6,6 +6,9 @@ pub fn in_container() -> bool {
     || env::var("KUBERNETES_SERVICE_HOST")
       .map(|val| !val.is_empty())
       .unwrap_or(false)
+    || env::var("container")
+      .map(|val| val == "podman" || val == "oci")
+      .unwrap_or(false)
 }
 
 pub fn if_container<T>(_if: T, _else: T) -> T {
