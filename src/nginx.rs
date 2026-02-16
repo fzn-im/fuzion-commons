@@ -1,12 +1,14 @@
 use std::num::ParseIntError;
 use std::process::Stdio;
 use std::str::Utf8Error;
+use std::time::Duration;
 
 use nix::unistd::Pid;
 use thiserror::Error;
 use tokio::process::{Child, Command};
 use tokio::signal;
 use tokio::sync::oneshot;
+use tokio::time::sleep;
 use users::get_user_by_name;
 
 pub const NGINX_PID_FILE: &str = "/tmp/nginx.pid";
@@ -27,8 +29,8 @@ pub enum NginxPidError {
   Utf8(#[from] Utf8Error),
 }
 
-pub async fn launch() -> Result<(), NginxLaunchError> {
-  let user = get_user_by_name("root").ok_or(NginxLaunchError::NoSuchUser)?;
+pub async fn launch() -> Result<(), NginxError> {
+  let user = get_user_by_name("root").ok_or(NginxError::NoSuchUser)?;
 
   let mut child = Command::new("nginx")
     .uid(user.uid())
@@ -41,7 +43,7 @@ pub async fn launch() -> Result<(), NginxLaunchError> {
 
   tokio::fs::write(
     NGINX_PID_FILE,
-    &format!("{}", child.id().ok_or(NginxLaunchError::MissingPid)?),
+    &format!("{}", child.id().ok_or(NginxError::MissingPid)?),
   )
   .await?;
 
@@ -86,12 +88,38 @@ pub async fn launch() -> Result<(), NginxLaunchError> {
   Ok(())
 }
 
+pub async fn kill() -> Result<(), NginxError> {
+  let nginx_pid = get_nginx_pid().await?;
+
+  if let Err(err) = nix::sys::signal::kill(
+    Pid::from_raw(nginx_pid as i32),
+    nix::sys::signal::Signal::SIGINT,
+  ) {
+    println!("Could not SIGINT Nginx: {err}");
+
+    return Ok(());
+  }
+
+  sleep(Duration::from_secs(10)).await;
+
+  if let Err(err) = nix::sys::signal::kill(
+    Pid::from_raw(nginx_pid as i32),
+    nix::sys::signal::Signal::SIGKILL,
+  ) {
+    println!("Could not SIGKILL Nginx: {err}");
+  }
+
+  Ok(())
+}
+
 #[derive(Debug, Error)]
-pub enum NginxLaunchError {
+pub enum NginxError {
   #[error(transparent)]
   Io(#[from] std::io::Error),
   #[error("Missing pid")]
   MissingPid,
+  #[error(transparent)]
+  NginxPid(#[from] NginxPidError),
   #[error("No such user")]
   NoSuchUser,
 }
