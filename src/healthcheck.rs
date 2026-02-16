@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use awc::error::SendRequestError;
 use thiserror::Error;
 use tokio::time::sleep;
 
@@ -10,44 +11,43 @@ pub struct Healthcheck {
 }
 
 impl Healthcheck {
-  pub async fn run(&self) -> Result<(), HealthcheckError> {
-    'running: loop {
-      for i in 1..=3 {
-        println!("Healthcheck #{i}...");
+  pub async fn run(&self) -> bool {
+    for i in 1..=3 {
+      println!("Healthcheck #{i}...");
 
-        if test(&self.url).await? {
-          break;
-        }
-
-        if i == 3 {
-          println!("Giving up...");
-
-          break 'running;
-
-          // process::exit(1);
-        }
-
-        sleep(Duration::from_secs(15)).await;
+      if test(&self.url).await {
+        break;
       }
+
+      if i == 3 {
+        println!("Giving up...");
+
+        return false;
+      }
+
+      sleep(Duration::from_secs(15)).await;
     }
 
-    Ok(())
+    false
   }
 }
 
-async fn test(check_url: &str) -> Result<bool, HealthcheckError> {
+async fn test(check_url: &str) -> bool {
   println!("Healthcheck endpoint: {check_url}");
 
-  if create_http_client().get(check_url).send().await.is_ok() {
-    println!("Healthcheck successful.");
+  if (create_http_client().get(check_url).send().await).is_err() {
+    println!("Healthcheck failed.");
 
-    return Ok(true);
+    return false;
   }
 
-  println!("Healthcheck failed.");
+  println!("Healthcheck successful.");
 
-  Ok(false)
+  true
 }
 
 #[derive(Debug, Error)]
-pub enum HealthcheckError {}
+pub enum HealthcheckError {
+  #[error(transparent)]
+  Send(#[from] SendRequestError),
+}
