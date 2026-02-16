@@ -6,6 +6,7 @@ extern crate serde_derive as _;
 #[macro_use(slog_o)]
 extern crate slog;
 
+pub mod askama;
 pub mod config;
 pub mod containers;
 pub mod db;

@@ -8,6 +8,7 @@ actix-http = "3.9.0"
 actix-web = "4.9.0"
 # actix-web-thiserror = "0.2.7"
 actix-web-thiserror = { git = "https://github.com/enzious/actix-web-thiserror.git", branch = "fuzion-changes" }
+askama = "0.14.0"
 # actix-web-thiserror = { path = "../../actix-web-thiserror/actix-web-thiserror" }
 async-trait = "0.1.77"
 awc = { version = "3.5.1", features = [ "rustls-0_23-native-roots" ] }
