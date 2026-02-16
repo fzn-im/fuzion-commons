@@ -14,6 +14,7 @@ pub mod error;
 pub mod http;
 pub mod logging;
 pub mod migration;
+pub mod nginx;
 pub mod response;
 pub mod serde;
 pub mod uri;

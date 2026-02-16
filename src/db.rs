@@ -58,7 +58,7 @@ impl<'a, T> PgClient<'a, T> {
 
 impl PgClient<'_> {
   pub async fn prepare(&self, query: &str) -> Result<tokio_postgres::Statement, PgClientError> {
-    let stmt = match &self.inner {
+    match &self.inner {
       PgClientInner::Client(client) => client.prepare_cached(query).await,
       PgClientInner::Transaction(transaction) => transaction.prepare_cached(query).await,
       _ => Err(PgClientError::Internal {
@@ -69,9 +69,7 @@ impl PgClient<'_> {
       source: err,
       query: query.to_owned(),
       backtrace: Backtrace::force_capture(),
-    });
-
-    stmt
+    })
   }
 
   pub async fn prepare_cached(
