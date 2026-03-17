@@ -3,8 +3,6 @@
 extern crate log;
 #[macro_use]
 extern crate serde_derive as _;
-#[macro_use(slog_o)]
-extern crate slog;
 
 pub mod askama;
 pub mod config;
@@ -17,6 +15,7 @@ pub mod http;
 pub mod logging;
 pub mod migration;
 pub mod nginx;
+pub mod query_builder;
 pub mod response;
 pub mod serde;
 pub mod uri;

@@ -42,7 +42,7 @@ fn filter_records(record: &slog::Record) -> bool {
 }
 
 pub fn init(config: &LoggingConfig) {
-  let values = slog_o!("place" =>
+  let values = slog::o!("place" =>
     slog::FnValue(move |info| {
       format!(
         "{}:{} {}",
