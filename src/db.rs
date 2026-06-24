@@ -211,17 +211,50 @@ impl<'a> FromRequest for PgClient<'a> {
   }
 }
 
+/// Format a `tokio_postgres::Error` with full `DbError` details when available.
+///
+/// `tokio_postgres::Error`'s `Display` only writes the kind string (e.g. `"db error"`)
+/// and does not include the server message.
+pub fn fmt_pg_error(err: &tokio_postgres::Error) -> String {
+  if let Some(db) = err.as_db_error() {
+    use std::fmt::Write;
+
+    let mut msg = format!(
+      "{}: {} (code: {})",
+      db.severity(),
+      db.message(),
+      db.code().code()
+    );
+
+    if let Some(detail) = db.detail() {
+      let _ = write!(msg, " detail={detail}");
+    }
+    if let Some(hint) = db.hint() {
+      let _ = write!(msg, " hint={hint}");
+    }
+    if let Some(constraint) = db.constraint() {
+      let _ = write!(msg, " constraint={constraint}");
+    } else if let Some(table) = db.table() {
+      let _ = write!(msg, " table={table}");
+    }
+
+    msg
+  } else {
+    err.to_string()
+  }
+}
+
 #[derive(Debug, Error, ResponseError)]
 pub enum PgClientError {
   #[error("internal error")]
   Internal { backtrace: Backtrace },
-  #[error("postgres error: {source}")]
+  #[error("postgres error: {}", fmt_pg_error(.source))]
   Postgres {
     #[from]
     source: tokio_postgres::Error,
     backtrace: Backtrace,
   },
-  #[error("postgres query error: {source}\n{query}")]
+  #[error("postgres query error: {}\n{query}", fmt_pg_error(.source))]
   PostgresQuery {
     source: tokio_postgres::Error,
     query: String,

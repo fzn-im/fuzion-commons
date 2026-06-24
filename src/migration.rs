@@ -56,7 +56,11 @@ impl<'a> Migrator<'a> {
 
     // Perform each one.
     for migration in &migrations {
-      info!("Migrating to {:?} ...", &migration.version());
+      info!(
+        "[{}] Migrating to {:?} ...",
+        self.module_name,
+        &migration.version()
+      );
 
       let mut txn = self.db_client.transaction().await?;
 
@@ -67,7 +71,11 @@ impl<'a> Migrator<'a> {
       };
 
       if result.is_err() {
-        error!("Failed migration on version: {:?}", &migration.version());
+        error!(
+          "[{}] Failed migration on version: {:?}",
+          self.module_name,
+          &migration.version()
+        );
 
         return result;
       }
@@ -92,7 +100,7 @@ impl<'a> Migrator<'a> {
       None => Version(0, 0, 0),
     };
 
-    info!("Current version is: {:?}", &version);
+    info!("[{}] Current version is: {:?}", self.module_name, &version);
 
     Ok(version)
   }
