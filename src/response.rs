@@ -20,33 +20,39 @@ where
   S: Stream<Item = Result<Bytes, PayloadError>>,
 {
   async fn handle_error(mut self) -> Result<Self, ResponseHandlingError> {
-    if self.status() != 200 {
-      match self.json().await {
-        Ok(response) => return Err(ResponseHandlingError::ErrorResponse(response)),
-        Err(_) => {
-          return match self.body().await {
-            Ok(body) => Err(ResponseHandlingError::ErrorStatusBody(
-              self.status(),
-              String::from_utf8_lossy(&body[..]).to_string(),
-            )),
-            _ => Err(ResponseHandlingError::ErrorStatus(self.status())),
-          }
-        }
-      }
+    let status = self.status();
+    if status.is_success() {
+      return Ok(self);
     }
 
-    Ok(self)
+    let body = match self.body().await {
+      Ok(body) => body,
+      Err(err) => {
+        return Err(ResponseHandlingError::ErrorStatusBody(
+          status,
+          format!("<failed to read response body: {err}>"),
+        ));
+      }
+    };
+
+    let body_text = String::from_utf8_lossy(&body).into_owned();
+
+    if let Ok(response) = serde_json::from_slice::<serde_json::Value>(&body) {
+      return Err(ResponseHandlingError::ErrorResponse(status, response));
+    }
+
+    Err(ResponseHandlingError::ErrorStatusBody(status, body_text))
   }
 }
 
 #[derive(Debug, Error, ResponseError)]
 pub enum ResponseHandlingError {
-  #[error("Error response")]
-  ErrorResponse(serde_json::Value),
-  #[error("Response status error: {0}")]
+  #[error("HTTP {0} error response body: {1}")]
+  ErrorResponse(StatusCode, serde_json::Value),
+  #[error("HTTP error status {0}")]
   ErrorStatus(StatusCode),
-  #[error("Response status error: {0} {1}")]
+  #[error("HTTP error status {0}: {1}")]
   ErrorStatusBody(StatusCode, String),
-  #[error(transparent)]
+  #[error("HTTP response JSON parse error: {0}")]
   JsonPayloadError(#[from] JsonPayloadError),
 }

@@ -28,14 +28,23 @@ impl ResponseTransform for ErrorResponseTransform {
     _type: Option<String>,
     details: Option<serde_json::Value>,
   ) -> HttpResponse {
-    let backtrace_log = Some(*RUST_BACKTRACE)
-      .filter(|val| *val)
-      .and_then(|_| {
-        request_ref::<std::backtrace::Backtrace>(&err).map(|backtrace| format!("\n\n{backtrace}"))
-      })
-      .unwrap_or(String::from(""));
+    let mut log = format!("Response error - {name}: {err} (status {status_code})");
 
-    log::error!("Response error - {name}: {err}{backtrace_log}");
+    if let Some(value) = reason.as_ref() {
+      log.push_str(&format!("\n  reason: {value}"));
+    }
+
+    if let Some(value) = details.as_ref() {
+      log.push_str(&format!("\n  details: {value}"));
+    }
+
+    if *RUST_BACKTRACE {
+      if let Some(backtrace) = request_ref::<std::backtrace::Backtrace>(&err) {
+        log.push_str(&format!("\n\n{backtrace}"));
+      }
+    }
+
+    log::error!("{log}");
 
     if let Some(reason) = reason {
       let mut response: HashMap<String, serde_json::Value> = HashMap::new();
